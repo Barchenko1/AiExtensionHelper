@@ -1,20 +1,16 @@
 <!doctype html>
 <html>
   <head><meta charset="utf-8"><title>Settings</title></head>
-  <body style="font-family:sans-serif;width:330px;padding:12px">
+  <body style="font-family:sans-serif;width:320px;padding:12px">
     <label>API URL</label>
     <input id="apiUrl" type="text" placeholder="http://localhost:8080/text" style="width:100%">
-
-    <div style="height:10px"></div>
-
-    <label>Hotkeys (one per line)</label>
-    <textarea id="hotkeys" rows="5" placeholder="Meta+Shift+X&#10;Control+Shift+X" style="width:100%"></textarea>
-
-    <div style="height:10px"></div>
-
-    <button id="saveBtn">Save</button>
-    <span id="status" style="margin-left:8px;color:#0a0"></span>
-
+    <div style="margin-top:10px">
+      <button id="saveBtn">Save</button>
+      <span id="status" style="margin-left:8px;color:#0a0"></span>
+    </div>
+    <p style="color:#666;font-size:12px;margin-top:12px">
+      Set the keyboard shortcut at <b>chrome://extensions/shortcuts</b> (command: <code>trigger-capture</code>).
+    </p>
     <script src="popup.js"></script>
   </body>
 </html>

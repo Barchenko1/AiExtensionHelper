@@ -1,12 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Send Page HTML",
-  "version": "1.2.0",
-  "permissions": ["storage", "scripting", "activeTab", "tabs"],
+  "name": "Send Inner HTML",
+  "version": "1.0.0",
+  "permissions": ["storage", "scripting", "tabs", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "Send Page HTML" },
-  "content_scripts": [
-    { "matches": ["<all_urls>"], "js": ["contentScript.js"], "run_at": "document_idle" }
-  ]
+  "action": { "default_popup": "popup.html" },
+  "commands": {
+    "trigger-capture": {
+      "suggested_key": { "default": "Ctrl+Shift+X", "mac": "Command+Shift+X" },
+      "description": "Send page content"
+    }
+  }
 }
