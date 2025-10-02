@@ -1,109 +1,80 @@
-const DEFAULT_API = "http://localhost:8080/api/v1/text";
-const DEFAULT_API_CANVAS = "http://localhost:8080/api/v1/canvas";
-
-
 chrome.runtime.onInstalled.addListener(async () => {
-    const { apiUrl, apiSecret } = await chrome.storage.local.get(["apiUrl", "apiSecret"]);
-    if (!apiUrl) await chrome.storage.local.set({ apiUrl: DEFAULT_API });
+    const { apiUrl, apiCanvasUrl, apiSecret } = await chrome.storage.local.get(["apiUrl", "apiCanvasUrl", "apiSecret"]);
+    if (!apiUrl) await chrome.storage.local.set({ apiUrl: "" });
+    if (!apiCanvasUrl) await chrome.storage.local.set({ apiCanvasUrl: "" });
     if (!apiSecret) await chrome.storage.local.set({ apiSecret: "" });
 });
 
-chrome.commands.onCommand.addListener(async (command) => {
-    if (command !== "trigger-capture") return;
+async function activeTab() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab;
+}
 
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab?.id) return;
+async function captureTextFromPage(tabId) {
+    const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: () => (document.body?.innerText || document.documentElement.innerText || "")
+    });
+    return result;
+}
 
-        const { apiUrl, apiSecret } = await chrome.storage.local.get(["apiUrl", "apiSecret"]);
-        const targetUrl = apiUrl || DEFAULT_API;
+async function exportDocHtml(tabId) {
+    const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId }, world: "MAIN",
+        func: async () => {
+            const m = location.pathname.match(/\/document\/(u\/\d+\/)?d\/([^/]+)/);
+            if (!m) return { ok:false, error:"Not a Google Doc page" };
+            const userPart = m[1] || ""; const id = m[2];
+            const title = (document.title || "document").replace(/\s+-\s+Google Docs.*/, "").replace(/[\\/:*?"<>|]/g, "_");
+            const res = await fetch(`/document/${userPart}d/${id}/export?format=html`, { credentials:"include" });
+            if (!res.ok) return { ok:false, error:`Export failed: ${res.status}` };
+            const blob = await res.blob(); const ab = await blob.arrayBuffer();
+            return { ok:true, filename: `${title}.html`, type: blob.type || "text/html", bytes: Array.from(new Uint8Array(ab)) };
+        }
+    });
+    if (!result?.ok) throw new Error(result?.error || "Export failed");
+    return { filename: result.filename, type: result.type, bytes: new Uint8Array(result.bytes) };
+}
 
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: (url, secret) => {
-                try {
-                    const bodyText = document.body ? document.body.innerText : document.documentElement.innerText;
-                    fetch(url, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "text/plain",
-                            "X-Api-Secret": secret || ""
-                        },
-                        body: bodyText || ""
-                    });
-                } catch (e) {
-                    console.error("Send failed:", e);
-                }
-            },
-            args: [targetUrl, apiSecret]
-        });
-    } catch (err) {
-        console.error("Capture failed:", err);
-    }
-});
 
 chrome.commands.onCommand.addListener(async (command) => {
-    if (command !== "trigger-capture-html") return;
-
     try {
-        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-        if (!tab?.id) return;
+        const tab = await activeTab(); if (!tab?.id) return;
+        const { apiUrl, apiCanvasUrl, apiSecret, prompt, language } = await chrome.storage.local.get(["apiUrl","apiCanvasUrl","apiSecret", "prompt", "language"]);
 
-        const {apiCanvasUrl, apiSecret} = await chrome.storage.local.get(["apiUrl", "apiSecret"]);
-        const targetUrl = apiCanvasUrl || DEFAULT_API_CANVAS;
+        if (command === "trigger-capture") {
+            const text = await captureTextFromPage(tab.id);
+            console.log(text);
+            await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Api-Secret": apiSecret},
+                body: JSON.stringify({ text, prompt, language })
+            });
+            console.log("Text sent ✓");
+        }
 
-        await chrome.scripting.executeScript({
-            target: {tabId: tab.id},
-            world: "MAIN",
-            func: async (url, secret) => {
-                try {
-                    // Ensure we're on a Google Doc
-                    const m = location.pathname.match(/\/document\/(u\/\d+\/)?d\/([^/]+)/);
-                    if (!m) {
-                        console.warn("[capture-html] Not a Google Doc page");
-                        return;
-                    }
-                    const userPart = m[1] || "";   // e.g. "u/2/"
-                    const id = m[2];
+        if (command === "trigger-capture-html") {
+            const { filename, type, bytes } = await exportDocHtml(tab.id);
+            const fd = new FormData();
+            fd.append("file", new Blob([bytes], { type }), filename);
 
-                    // Build a nice filename from the doc title
-                    const base = (document.title || "document")
-                        .replace(/\s+-\s+Google Docs.*/, '')
-                        .replace(/[\\/:*?"<>|]/g, "_");
-                    const filename = base + ".html";
+            const payload = { prompt, language };
+            fd.append(
+                "payload",
+                new Blob([JSON.stringify(payload)], { type: "application/json" }),
+                "payload.json"
+            );
 
-                    // Same-origin export (uses your Google session cookies)
-                    const exportPath = `/document/${userPart}d/${id}/export?format=html`;
-                    const res = await fetch(exportPath, {credentials: "include"});
-                    if (!res.ok) throw new Error(`Export failed: ${res.status} ${res.statusText}`);
-
-                    const blob = await res.blob();
-
-                    // Build multipart body; DON'T set Content-Type manually (avoids boundary/ISO-8859-1 issues)
-                    const fd = new FormData();
-                    const file =
-                        (typeof File !== "undefined")
-                            ? new File([blob], filename, {type: blob.type || "text/html"})
-                            : blob;
-                    fd.append("file", file, filename);
-
-                    const up = await fetch(url, {
-                        method: "POST",
-                        body: fd,
-                        headers: {"X-Api-Secret": secret || ""}
-                    });
-
-                    if (!up.ok) throw new Error(`Upload failed: ${up.status} ${up.statusText}`);
-                    console.log("[capture-html] Uploaded ✔");
-                } catch (e) {
-                    console.error("[capture-html] Error:", e);
-                }
-            },
-            args: [targetUrl, apiSecret || ""]
-        });
-    } catch (err) {
-        console.error("Capture HTML failed:", err);
+            const res = await fetch(apiCanvasUrl, {
+                method: "POST",
+                headers: { "X-Api-Secret": apiSecret },
+                body: fd
+            });
+            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            console.log("HTML sent ✓");
+        }
+    } catch (e) {
+        console.error("Command error:", e);
     }
-
 });
 

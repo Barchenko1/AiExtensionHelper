@@ -1,18 +1,46 @@
 <!doctype html>
 <html>
-  <head><meta charset="utf-8"><title>Settings</title></head>
-  <body style="font-family:sans-serif;width:320px;padding:12px">
-    <label>API URL</label>
-    <input id="apiUrl" type="text" placeholder="http://localhost:8080/api/v1/text" style="width:100%">
-    <input id="apiCanvasUrl" type="text" placeholder="http://localhost:8080/api/v1/canvas" style="width:100%">
-    <input id="apiSecret" type="text" placeholder="secret" style="width:100%">
-    <div style="margin-top:10px">
-      <button id="saveBtn">Save</button>
-      <span id="status" style="margin-left:8px;color:#0a0"></span>
-    </div>
-    <p style="color:#666;font-size:12px;margin-top:12px">
-      Set the keyboard shortcut at <b>chrome://extensions/shortcuts</b>).
-    </p>
-    <script src="popup.js"></script>
-  </body>
+<head>
+    <meta charset="utf-8">
+    <title>Settings</title>
+    <style>
+        body { font-family: system-ui, sans-serif; width: 340px; padding: 12px; }
+        label { display:block; margin: 10px 0 4px; font-weight: 600; }
+        input, textarea, select { width: 100%; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 80px; }
+        .row { margin-top: 10px; }
+        #status { margin-left: 8px; color: #0a0; }
+        small { color:#666; }
+    </style>
+</head>
+<body>
+<label for="apiUrl">API URL</label>
+<input id="apiUrl" type="text" placeholder="http://localhost:8080/api/v1/text">
+
+<label for="apiCanvasUrl">Canvas API URL</label>
+<input id="apiCanvasUrl" type="text" placeholder="http://localhost:8080/api/v1/canvas">
+
+<label for="apiSecret">API Secret</label>
+<input id="apiSecret" type="text" placeholder="secret">
+
+<label for="promptText">Default Prompt</label>
+<textarea id="promptText" placeholder="Enter a default prompt to send with captures..."></textarea>
+
+<label for="langSelect">Language</label>
+<select id="langSelect">
+    <option value="Java">Java</option>
+    <option value="JavaScript">JavaScript</option>
+    <option value="TypeScript">TypeScript</option>
+</select>
+
+<div class="row">
+    <button id="saveBtn">Save</button>
+    <span id="status"></span>
+</div>
+
+<p class="row">
+    <small>Set the keyboard shortcut at <b>chrome://extensions/shortcuts</b>.</small>
+</p>
+<script src="popup.js"></script>
+</body>
 </html>

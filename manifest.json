@@ -3,14 +3,6 @@
   "name": "Send Page / Docs to Helper",
   "version": "1.1.0",
   "permissions": ["storage", "scripting", "tabs", "activeTab"],
-  "host_permissions": [
-    "https://docs.google.com/*",
-    "http://localhost:8080/*",
-    "http://127.0.0.1:8080/*",
-    "http://192.168.0.0/*",
-    "http://192.168.1.0/*",
-    "http://192.168.1.22:8080/*"
-  ],
   "background": { "service_worker": "background.js" },
   "action": { "default_popup": "popup.html" },
   "commands": {
