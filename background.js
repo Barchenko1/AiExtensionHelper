@@ -1,8 +1,8 @@
 chrome.runtime.onInstalled.addListener(async () => {
-    const { apiUrl, apiCanvasUrl, apiSecret } = await chrome.storage.local.get(["apiUrl", "apiCanvasUrl", "apiSecret"]);
+    const { apiUrl, apiCanvasUrl, apiCode } = await chrome.storage.local.get(["apiUrl", "apiCanvasUrl", "apiCode"]);
     if (!apiUrl) await chrome.storage.local.set({ apiUrl: "" });
     if (!apiCanvasUrl) await chrome.storage.local.set({ apiCanvasUrl: "" });
-    if (!apiSecret) await chrome.storage.local.set({ apiSecret: "" });
+    if (!apiCode) await chrome.storage.local.set({ apiCode: "" });
 });
 
 async function activeTab() {
@@ -40,14 +40,15 @@ async function exportDocHtml(tabId) {
 chrome.commands.onCommand.addListener(async (command) => {
     try {
         const tab = await activeTab(); if (!tab?.id) return;
-        const { apiUrl, apiCanvasUrl, apiSecret, prompt, language } = await chrome.storage.local.get(["apiUrl","apiCanvasUrl","apiSecret", "prompt", "language"]);
+        const { apiUrl, apiCanvasUrl, apiCode, prompt, language } = await chrome.storage.local.get(["apiUrl", "apiCanvasUrl", "apiCode", "prompt", "language"]);
 
         if (command === "trigger-capture") {
             const text = await captureTextFromPage(tab.id);
             console.log(text);
             await fetch(apiUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "X-Api-Secret": apiSecret},
+                headers: { "Content-Type": "application/json",
+                    "X-Auth-Code": apiCode},
                 body: JSON.stringify({ text, prompt, language })
             });
             console.log("Text sent ✓");
@@ -67,7 +68,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 
             const res = await fetch(apiCanvasUrl, {
                 method: "POST",
-                headers: { "X-Api-Secret": apiSecret },
+                headers: { "X-Auth-Code": apiCode },
                 body: fd
             });
             if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
