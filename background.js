@@ -1,7 +1,6 @@
 chrome.runtime.onInstalled.addListener(async () => {
-    const { apiUrl, apiCanvasUrl, apiCode } = await chrome.storage.local.get(["apiUrl", "apiCanvasUrl", "apiCode"]);
+    const { apiUrl, apiCode } = await chrome.storage.local.get(["apiUrl", "apiCode"]);
     if (!apiUrl) await chrome.storage.local.set({ apiUrl: "" });
-    if (!apiCanvasUrl) await chrome.storage.local.set({ apiCanvasUrl: "" });
     if (!apiCode) await chrome.storage.local.set({ apiCode: "" });
 });
 
@@ -40,12 +39,12 @@ async function exportDocHtml(tabId) {
 chrome.commands.onCommand.addListener(async (command) => {
     try {
         const tab = await activeTab(); if (!tab?.id) return;
-        const { apiUrl, apiCanvasUrl, apiCode, prompt, language } = await chrome.storage.local.get(["apiUrl", "apiCanvasUrl", "apiCode", "prompt", "language"]);
+        const { apiUrl, apiCode, prompt, language } = await chrome.storage.local.get(["apiUrl", "apiCode", "prompt", "language"]);
 
         if (command === "trigger-capture") {
             const text = await captureTextFromPage(tab.id);
             console.log(text);
-            await fetch(apiUrl, {
+            await fetch(apiUrl + "/api/v1/text", {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
                     "X-Auth-Code": apiCode},
@@ -66,7 +65,7 @@ chrome.commands.onCommand.addListener(async (command) => {
                 "payload.json"
             );
 
-            const res = await fetch(apiCanvasUrl, {
+            const res = await fetch(apiUrl + "/api/v1/canvas", {
                 method: "POST",
                 headers: { "X-Auth-Code": apiCode },
                 body: fd
