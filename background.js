@@ -39,7 +39,8 @@ async function exportDocHtml(tabId) {
 chrome.commands.onCommand.addListener(async (command) => {
     try {
         const tab = await activeTab(); if (!tab?.id) return;
-        const { apiUrl, apiCode, prompt, language } = await chrome.storage.local.get(["apiUrl", "apiCode", "prompt", "language"]);
+        const { apiUrl, apiCode, prompt, language, provider } = await chrome.storage.local.get(["apiUrl", "apiCode", "prompt", "language", "provider"]);
+        const aiProvider = provider || "openai";
 
         if (command === "trigger-capture") {
             const text = await captureTextFromPage(tab.id);
@@ -47,7 +48,8 @@ chrome.commands.onCommand.addListener(async (command) => {
             await fetch(apiUrl + "/api/v1/text", {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
-                    "X-Auth-Code": apiCode},
+                    "X-Auth-Code": apiCode,
+                    "X-AI-Provider": aiProvider},
                 body: JSON.stringify({ text, prompt, language })
             });
             console.log("Text sent ✓");
@@ -67,7 +69,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 
             const res = await fetch(apiUrl + "/api/v1/canvas", {
                 method: "POST",
-                headers: { "X-Auth-Code": apiCode },
+                headers: { "X-Auth-Code": apiCode, "X-AI-Provider": aiProvider },
                 body: fd
             });
             if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
