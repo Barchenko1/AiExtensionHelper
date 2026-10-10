@@ -15,7 +15,12 @@
 </head>
 <body>
 <label for="apiUrl">API URL</label>
-<input id="apiUrl" type="text" placeholder="http://16.170.163.130:8080">
+<!--<input id="apiUrl" type="text" placeholder="http://16.170.163.130:8080">-->
+<label for="apiUrl">URL</label>
+<select id="apiUrl">
+    <option value="remote">http://16.170.163.130:8080</option>
+    <option value="local">http://localhost:8080</option>
+</select>
 
 <label for="apiCode">API Code</label>
 <input id="apiCode" type="text" placeholder="secret">
@@ -24,12 +29,6 @@
 <select id="modelSelect">
     <option value="openai">OpenAI (GPT)</option>
     <option value="claude">Claude</option>
-</select>
-
-<label for="modelSelect">Model</label>
-<select id="modelSelect">
-    <option value="claude">Claude</option>
-    <option value="openai">OpenAI (GPT)</option>
 </select>
 
 <label for="promptText">Default Prompt</label>
