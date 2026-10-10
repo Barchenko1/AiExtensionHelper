@@ -40,7 +40,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     try {
         const tab = await activeTab(); if (!tab?.id) return;
         const { apiUrl, apiCode, prompt, language, provider } = await chrome.storage.local.get(["apiUrl", "apiCode", "prompt", "language", "provider"]);
-        const aiProvider = provider || "openai";
+        const providerHeaders = { "X-AI-Provider": provider === "openai" ? "openai" : "claude" };
 
         if (command === "trigger-capture") {
             const text = await captureTextFromPage(tab.id);
@@ -49,7 +49,7 @@ chrome.commands.onCommand.addListener(async (command) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
                     "X-Auth-Code": apiCode,
-                    "X-AI-Provider": aiProvider},
+                    ...providerHeaders },
                 body: JSON.stringify({ text, prompt, language })
             });
             console.log("Text sent ✓");
@@ -69,7 +69,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 
             const res = await fetch(apiUrl + "/api/v1/canvas", {
                 method: "POST",
-                headers: { "X-Auth-Code": apiCode, "X-AI-Provider": aiProvider },
+                headers: { "X-Auth-Code": apiCode, ...providerHeaders },
                 body: fd
             });
             if (!res.ok) throw new Error(`Upload failed: ${res.status}`);

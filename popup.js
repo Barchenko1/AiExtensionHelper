@@ -11,7 +11,7 @@ const statusEl  = document.getElementById("status");
   apiCodeEl.value = apiCode || "";
   promptEl.value = prompt || "";
   langEl.value = language || "Java";
-  modelEl.value = provider || "openai";
+  modelEl.value = provider === "openai" ? "openai" : "claude";
 
 })();
 
