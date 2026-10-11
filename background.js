@@ -4,6 +4,42 @@ chrome.runtime.onInstalled.addListener(async () => {
     if (!apiCode) await chrome.storage.local.set({ apiCode: "" });
 });
 
+// Heartbeat: lets the UI show a green light while this extension is running with a valid code.
+async function ping() {
+    try {
+        const { apiUrl, apiCode } = await chrome.storage.local.get(["apiUrl", "apiCode"]);
+        if (!apiUrl || !apiCode) return;
+        await fetch(apiUrl + "/api/v1/ping", {
+            method: "POST",
+            headers: { "X-Auth-Code": apiCode, "X-Client": "extension" }
+        });
+    } catch (e) {
+        // server unreachable: the UI light simply stays red
+    }
+}
+
+chrome.alarms.create("ping", { periodInMinutes: 0.5 });
+chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === "ping") ping(); });
+// Changing the code (or server) must turn the old connection red right away: tell the server the
+// old code's extension is gone, then check in with the new settings.
+chrome.storage.onChanged.addListener(async (changes, area) => {
+    if (area === "local" && (changes.apiCode || changes.apiUrl)) {
+        const { apiUrl: newUrl, apiCode: newCode } = await chrome.storage.local.get(["apiUrl", "apiCode"]);
+        const oldUrl = changes.apiUrl ? changes.apiUrl.oldValue : newUrl;
+        const oldCode = changes.apiCode ? changes.apiCode.oldValue : newCode;
+        if (oldUrl && oldCode && (oldUrl !== newUrl || oldCode !== newCode)) {
+            try {
+                await fetch(oldUrl + "/api/v1/ping/offline", {
+                    method: "POST",
+                    headers: { "X-Auth-Code": oldCode, "X-Client": "extension" }
+                });
+            } catch (e) { /* old server unreachable */ }
+        }
+    }
+    ping();
+});
+ping();
+
 async function activeTab() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     return tab;

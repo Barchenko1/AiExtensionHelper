@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Send Page / Docs to Helper",
   "version": "1.1.0",
-  "permissions": ["storage", "scripting", "tabs", "activeTab"],
+  "permissions": ["storage", "scripting", "tabs", "activeTab", "alarms"],
   "background": { "service_worker": "background.js" },
   "action": { "default_popup": "popup.html" },
   "commands": {
