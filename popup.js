@@ -16,7 +16,7 @@ const statusEl  = document.getElementById("status");
 })();
 
 document.getElementById("saveBtn").addEventListener("click", async () => {
-  const apiUrl = apiUrlEl.value.trim();
+  const apiUrl = apiUrlEl.value.trim().replace(/\/+$/, "");
   const apiCode = apiCodeEl.value.trim();
   const prompt = promptEl.value;
   const language = langEl.value;
