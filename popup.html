@@ -15,12 +15,10 @@
 </head>
 <body>
 <label for="apiUrl">URL</label>
-<input id="apiUrl" list="apiUrlPresets" type="url" placeholder="https://screenintegration.com/aihelper">
-<datalist id="apiUrlPresets">
-    <option value="https://screenintegration.com/aihelper">screenintegration.com</option>
-    <option value="http://16.170.163.130:8080">remote</option>
+<select id="apiUrl">
+    <option value="http://63.187.233.161/aihelper">remote</option>
     <option value="http://localhost:8080">local</option>
-</datalist>
+</select>
 
 <label for="apiCode">API Code</label>
 <input id="apiCode" type="text" placeholder="secret">
